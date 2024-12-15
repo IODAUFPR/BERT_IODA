@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificador de Similaridade BERT</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        /* Estilos básicos inline para fallback */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #results {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Verificador de Similaridade BERT</h1>
+        <form id="similarity-form" action="/calculate" method="POST">
+            <label for="marca">Sua Marca:</label>
+            <input type="text" id="marca" name="marca" placeholder="Digite sua marca" required>
+            
+            <label for="colidencias">Marcas Colidentes (uma por linha):</label>
+            <textarea id="colidencias" name="colidencias" placeholder="Digite marcas colidentes" required></textarea>
+            
+            <button type="submit">Calcular Similaridade</button>
+        </form>
+        <div id="results"></div>
+    </div>
+    <script>
+        document.getElementById("similarity-form").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+
+            try {
+                const response = await fetch("/calculate", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const resultDiv = document.getElementById("results");
+                resultDiv.innerHTML = "";
+
+                if (!response.ok) {
+                    throw new Error(`Erro no servidor: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    data.results.forEach(item => {
+                        const p = document.createElement("p");
+                        p.textContent = `${item.colidencia}: ${item.similarity.toFixed(2)}%`;
+                        resultDiv.appendChild(p);
+                    });
+                } else {
+                    const errorMsg = document.createElement("p");
+                    errorMsg.textContent = `Erro: ${data.error}`;
+                    errorMsg.classList.add("error");
+                    resultDiv.appendChild(errorMsg);
+                }
+            } catch (error) {
+                const resultDiv = document.getElementById("results");
+                resultDiv.innerHTML = `<p class="error">Erro: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
